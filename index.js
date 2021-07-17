@@ -1,7 +1,20 @@
+/*
+  PGUSER=dbuser \
+  PGPASSWORD=secretpassword \
+  PGHOST=database.server.com \
+  PGPORT=3211 \
+  PGDATABASE=mydb \
+  node script.js
+*/
+const { Client } = require("pg");
+const client = new Client();
+client.connect();
+
 const WebSocket = require("ws");
 const wss = new WebSocket.Server({
-    port:'8081'
+    port: process.env.PORT || "8081"
 });
+
 
 roomlist = new Map();
 connetionlist = []
@@ -27,5 +40,13 @@ wss.on("close", () => {    // Cleanup
         console.log("interval" + connetionlist.length);
         connetionlist[0].send("periodic");
     },3000);
+
+
+    message
+        ask room
+        enter room
+        send chat
+        receive chat
+        quit room
 
 */
