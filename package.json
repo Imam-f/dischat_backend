@@ -4,6 +4,8 @@
   "description": "Websocket server for dischat",
   "main": "index.js",
   "scripts": {
+    "start": "node .",
+    "dev": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -15,5 +17,9 @@
   "bugs": {
     "url": "https://github.com/Imam-f/dischat_backend/issues"
   },
-  "homepage": "https://github.com/Imam-f/dischat_backend#readme"
+  "homepage": "https://github.com/Imam-f/dischat_backend#readme",
+  "dependencies": {
+    "nodemon": "^2.0.12",
+    "ws": "^7.5.3"
+  }
 }
