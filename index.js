@@ -29,7 +29,7 @@ wss.on("connection", socket => {
 });
 
 wss.on("close", () => {    // Cleanup
-     
+     connectionlist = []
 })
 
 
