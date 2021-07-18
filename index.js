@@ -1,11 +1,3 @@
-/*
-  PGUSER=dbuser \
-  PGPASSWORD=secretpassword \
-  PGHOST=database.server.com \
-  PGPORT=3211 \
-  PGDATABASE=mydb \
-  node script.js
-*/
 const { Client } = require("pg");
 const client = new Client();
 client.connect();
@@ -19,22 +11,56 @@ const wss = new WebSocket.Server({
 roomlist = new Map();
 connetionlist = []
 
-
 wss.on("connection", socket => {
+
     socket.on("message", message => {
-        console.log(message);
+
+        messageType = JSON.parse(message);
+        switch (messageType) {
+            case "RoomList" :
+                // find room
+                // new message
+                socket.send();
+                // delete message
+            case "RoomMake" :
+                // make room
+                // join
+                // add roomlist
+                // make message
+                socket.send();
+                // delete message
+            case "RoomEnter" :
+                // join room
+                // make message
+                socket.send();
+                // delete message
+            case "SendMessage" :
+                // make message
+                // broadcast in room
+                socket.send();
+                // delete message
+            default:
+                break;
+        }
+        
         socket.send("Hello "+ JSON.parse(message).dttext);
+
     });
     connetionlist.push(socket);
 });
 
-wss.on("close", () => {    // Cleanup
-     connectionlist = []
-})
+// function user() {
+//     this.name = "";
+//     this.picture = "";
+// }
+// function room() {
+//     this.name = "";
+//     this.id = "";
+// }
 
+// wss.on("close", () => {  })
 
-/*
-    Example
+/*  Example
 
     setInterval(() => {
         console.log("interval" + connetionlist.length);
@@ -48,5 +74,13 @@ wss.on("close", () => {    // Cleanup
         send chat
         receive chat
         quit room
+*/
 
+/*
+  PGUSER=dbuser \
+  PGPASSWORD=secretpassword \
+  PGHOST=database.server.com \
+  PGPORT=3211 \
+  PGDATABASE=mydb \
+  node script.js
 */
