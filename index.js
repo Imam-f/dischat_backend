@@ -21,30 +21,25 @@ wss.on("connection", socket => {
                 // find room
                 // new message
                 socket.send();
-                // delete message
             case "RoomMake" :
                 // make room
-                // join
                 // add roomlist
+                // join
                 // make message
                 socket.send();
-                // delete message
             case "RoomEnter" :
                 // join room
                 // make message
                 socket.send();
-                // delete message
             case "SendMessage" :
                 // make message
                 // broadcast in room
                 socket.send();
-                // delete message
             default:
                 break;
         }
         
         socket.send("Hello "+ JSON.parse(message).dttext);
-
     });
     connetionlist.push(socket);
 });
@@ -56,6 +51,7 @@ wss.on("connection", socket => {
 // function room() {
 //     this.name = "";
 //     this.id = "";
+//     this.message = {};
 // }
 
 // wss.on("close", () => {  })
