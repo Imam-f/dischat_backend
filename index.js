@@ -9,7 +9,7 @@ const wss = new WebSocket.Server({
 
 
 roomlist = new Map();
-connetionlist = []
+connetionlist = new Map();
 
 wss.on("connection", socket => {
 
