@@ -8,8 +8,8 @@ const wss = new WebSocket.Server({
 });
 
 
-roomlist = new Map();
-connetionlist = new Map();
+roomlist = new Set();
+connetionlist = new Set();
 
 wss.on("connection", socket => {
 
@@ -19,10 +19,20 @@ wss.on("connection", socket => {
         switch (messageType) {
             case "RoomList" :
                 // find room
+                roomList = roomlist.map((elm) => {
+                    return {
+                        id : elm.id,
+                        name : elm.name,
+                        creator : elm.creator,
+                        code : elm.code
+                    }
+                })
                 // new message
-                socket.send();
+                let message = messageFormat("RoomList",roomList);
+                socket.send(message);
             case "RoomMake" :
                 // make room
+                room
                 // add roomlist
                 // join
                 // make message
@@ -44,15 +54,33 @@ wss.on("connection", socket => {
     connetionlist.push(socket);
 });
 
-// function user() {
-//     this.name = "";
-//     this.picture = "";
-// }
-// function room() {
-//     this.name = "";
-//     this.id = "";
-//     this.message = {};
-// }
+function messageFormat(type, data) {
+    this.type = type;
+    this.data = data;
+    return JSON.stringify(messageFormat);
+}
+function user() {
+    this.name = "";
+    this.pictureurl = "";
+
+    return this;
+}
+function room() {
+    this.id = "";
+    this.name = "";
+    this.creator = "";
+    this.code = "";
+    this.message = [];
+
+    return this;
+}
+function message() {
+    this.sender = "";
+    this.text = "";
+    this.time = "";
+
+    return this;
+}
 
 // wss.on("close", () => {  })
 
