@@ -8,8 +8,8 @@ const wss = new WebSocket.Server({
 });
 
 
-roomlist = new Set();
-connetionlist = new Set();
+roomlist = [];
+let count = 0;
 
 wss.on("connection", socket => {
 
@@ -31,12 +31,14 @@ wss.on("connection", socket => {
                 let message = messageFormat("RoomList",roomList);
                 socket.send(message);
             case "RoomMake" :
-                // make room
-                room
-                // add roomlist
-                // join
-                // make message
-                socket.send();
+                let code = makeid();
+                count += 1;
+                roomList.push(new room(count, messageType.namecreator,
+                    messageType.creator, code));                       // new room
+                roomlist[roomlist.length - 1]
+                    .user.push(message.sender.name,message.sender);    // joid
+                let message = messageFormat("EnterRoom",roomList);     // new message
+                socket.send(message);
             case "RoomEnter" :
                 // join room
                 // make message
@@ -65,12 +67,13 @@ function user() {
 
     return this;
 }
-function room() {
+function room(id,name,creator,code) {
     this.id = "";
     this.name = "";
     this.creator = "";
     this.code = "";
     this.message = [];
+    this.user = [];
 
     return this;
 }
@@ -81,6 +84,17 @@ function message() {
 
     return this;
 }
+function makeid() {
+    let length = 9;
+    let result           = '';
+    let characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let charactersLength = characters.length;
+    for ( var i = 0; i < length; i++ ) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+   return result;
+}
+
 
 // wss.on("close", () => {  })
 
