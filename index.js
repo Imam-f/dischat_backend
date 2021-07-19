@@ -25,28 +25,41 @@ wss.on("connection", socket => {
                         name : elm.name,
                         creator : elm.creator,
                         code : elm.code
-                    }
-                })
+                    }})
                 // new message
                 let message = messageFormat("RoomList",roomList);
                 socket.send(message);
+
             case "RoomMake" :
                 let code = makeid();
                 count += 1;
                 roomList.push(new room(count, messageType.namecreator,
                     messageType.creator, code));                       // new room
                 roomlist[roomlist.length - 1]
-                    .user.push(message.sender.name,message.sender);    // joid
+                    .user.push(new user(
+                        messageType.sender.name,
+                        messageType.sender.pictureurl == undefined ? messageType.sender.pictureurl : "",
+                        socket
+                    ));                                                // join
                 let message = messageFormat("EnterRoom",roomList);     // new message
                 socket.send(message);
+
             case "RoomEnter" :
-                // join room
-                // make message
-                socket.send();
+                roomlist.filter((room) => {
+                    room.code = messageType.code;
+                    }).user.push(new user(
+                        messageType.sender.name,
+                        messageType.sender.pictureurl == undefined ? messageType.sender.pictureurl : "",
+                        socket
+                    ));                                              // join room
+                let message = messageFormat("EnterRoom","Success")   // make message
+                socket.send(message);
+                    
             case "SendMessage" :
                 // make message
                 // broadcast in room
                 socket.send();
+
             default:
                 break;
         }
@@ -61,9 +74,10 @@ function messageFormat(type, data) {
     this.data = data;
     return JSON.stringify(messageFormat);
 }
-function user() {
-    this.name = "";
-    this.pictureurl = "";
+function user(name, pictureurl = "", connection) {
+    this.name = name;
+    this.pictureurl = pictureurl;
+    this.connection = connection;
 
     return this;
 }
