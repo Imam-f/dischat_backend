@@ -73,6 +73,17 @@ wss.on("connection", socket => {
     });
 });
 
+// Room Pooling
+// use interval to each room
+// emptyroom get deleted
+    // User Pooling
+    // iterate over user
+    // dosconnect user removed from room
+
+
+// Reference https://www.npmjs.com/package/ws
+
+// Constructors
 function messageFormat(type, data) {
     this.type = type;
     this.data = data;
@@ -102,6 +113,8 @@ function message(sender, text) {
 
     return this;
 }
+
+// ID generator
 function makeid() {
     let length = 9;
     let result           = '';
@@ -133,10 +146,10 @@ function makeid() {
 */
 
 /*
-  PGUSER=dbuser \
-  PGPASSWORD=secretpassword \
-  PGHOST=database.server.com \
-  PGPORT=3211 \
-  PGDATABASE=mydb \
-  node script.js
+    PGUSER=dbuser \
+    PGPASSWORD=secretpassword \
+    PGHOST=database.server.com \
+    PGPORT=3211 \
+    PGDATABASE=mydb \
+    node script.js
 */
