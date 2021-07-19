@@ -12,9 +12,9 @@ let count = 0;
 
 wss.on("connection", socket => {
 
-    socket.on("message", message => {
+    socket.on("message", messageFromUser => {
 
-        messageType = JSON.parse(message);
+        messageType = JSON.parse(messageFromUser);
         switch (messageType) {
             case "RoomList" :
                 // find room
@@ -26,8 +26,8 @@ wss.on("connection", socket => {
                         code : elm.code
                     }})
                 // new message
-                let message = new messageFormat("RoomList",roomList);
-                socket.send(message);
+                let messageToDispatch = new messageFormat("RoomList",roomList);
+                socket.send(messageToDispatch);
 
             case "RoomMake" :
                 let code = makeid();
@@ -40,8 +40,8 @@ wss.on("connection", socket => {
                         messageType.sender.pictureurl == undefined ? messageType.sender.pictureurl : "",
                         socket
                     ));                                                // join
-                let message = new messageFormat("EnterRoom",roomList);     // new message
-                socket.send(message);
+                let messageToDispatch = new messageFormat("EnterRoom",roomList);     // new message
+                socket.send(messageToDispatch);
 
             case "RoomEnter" :
                 roomlist.filter((room) => {
@@ -50,9 +50,9 @@ wss.on("connection", socket => {
                         messageType.sender.name,
                         messageType.sender.pictureurl == undefined ? messageType.sender.pictureurl : "",
                         socket
-                    ));                                              // join room
-                let message = new messageFormat("EnterRoom","Success");   // make message
-                socket.send(message);
+                    ));                                                   // join room
+                let messageToDispatch = new messageFormat("EnterRoom","Success");   // make message
+                socket.send(messageToDispatch);
             
             case "SendMessage" :
                 // make message
@@ -65,7 +65,7 @@ wss.on("connection", socket => {
                 }).user.foreach((user) => {
                     let messageToBroadcast = new messageFormat("newMessage",messageQueue);
                     user.send(messageToBroadcast);
-                })
+                });
 
             default:
                 break;
@@ -86,10 +86,10 @@ function user(name, pictureurl = "", connection) {
     return this;
 }
 function room(id,name,creator,code) {
-    this.id = "";
-    this.name = "";
-    this.creator = "";
-    this.code = "";
+    this.id = id;
+    this.name = name;
+    this.creator = creator;
+    this.code = code;
     this.message = [];
     this.user = [];
 
