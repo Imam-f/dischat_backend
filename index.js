@@ -7,7 +7,6 @@ const wss = new WebSocket.Server({
     port: process.env.PORT || "8081"
 });
 
-
 roomlist = [];
 let count = 0;
 
@@ -27,7 +26,7 @@ wss.on("connection", socket => {
                         code : elm.code
                     }})
                 // new message
-                let message = messageFormat("RoomList",roomList);
+                let message = new messageFormat("RoomList",roomList);
                 socket.send(message);
 
             case "RoomMake" :
@@ -41,32 +40,37 @@ wss.on("connection", socket => {
                         messageType.sender.pictureurl == undefined ? messageType.sender.pictureurl : "",
                         socket
                     ));                                                // join
-                let message = messageFormat("EnterRoom",roomList);     // new message
+                let message = new messageFormat("EnterRoom",roomList);     // new message
                 socket.send(message);
 
             case "RoomEnter" :
                 roomlist.filter((room) => {
-                    room.code = messageType.code;
+                        return room.code == messageType.code;
                     }).user.push(new user(
                         messageType.sender.name,
                         messageType.sender.pictureurl == undefined ? messageType.sender.pictureurl : "",
                         socket
                     ));                                              // join room
-                let message = messageFormat("EnterRoom","Success")   // make message
+                let message = new messageFormat("EnterRoom","Success");   // make message
                 socket.send(message);
-                    
+            
             case "SendMessage" :
                 // make message
+                // asign message to room
                 // broadcast in room
-                socket.send();
+                // dispatch message
+                let messageQueue = new message(MessageType.sender.name,MessageType.payload);
+                roomlist.filter((room) => {
+                    return room.user.name == messageType.sender.name;
+                }).user.foreach((user) => {
+                    let messageToBroadcast = new messageFormat("newMessage",messageQueue);
+                    user.send(messageToBroadcast);
+                })
 
             default:
                 break;
         }
-        
-        socket.send("Hello "+ JSON.parse(message).dttext);
     });
-    connetionlist.push(socket);
 });
 
 function messageFormat(type, data) {
@@ -91,10 +95,10 @@ function room(id,name,creator,code) {
 
     return this;
 }
-function message() {
-    this.sender = "";
-    this.text = "";
-    this.time = "";
+function message(sender, text) {
+    this.sender = sender;
+    this.text = text;
+    this.time = new Date();
 
     return this;
 }
