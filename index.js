@@ -12,8 +12,6 @@ console.log("Listening");
 
 let roomlist = [];
 for(i = 0; i < 1 + Math.random() * 10 ;i++) {
-    // Todo check if roomnumber exist
-    
     let roomid = generateUniqueRoomId();
     roomlist.push(new room(
         roomid,
@@ -32,7 +30,7 @@ setInterval(() => {
     // roomlist = roomlist.filter((room) => {
     //     return room.user.length > 0;
     // })
-    console.log(roomlist);
+    // console.log(roomlist);
 }, 10000);
 
 
@@ -47,7 +45,7 @@ wss.on("connection", socket => {
 
         let messageToDispatch = null;
         switch (messageType) {
-            case 'RoomList' :
+            case "RoomList" :
                 let roomList = roomlist.map((elm) => {
                     return {
                         id : elm.id,
@@ -65,15 +63,15 @@ wss.on("connection", socket => {
             case "RoomMake" :
                 let roomid = generateUniqueRoomId();
                 let code = makeid();
-                roomList.push(new room(roomid, messageType.namecreator,
-                    messageType.creator, code));                       // new room
+                roomList.push(new room(roomid, messageReceived.namecreator,
+                    messageReceived.creator, code));                       // new room
                 roomlist[roomlist.length - 1]
                     .user.push(new user(
-                        messageType.sender.name,
-                        messageType.sender.pictureurl == undefined ? messageType.sender.pictureurl : "",
+                        messageReceived.sender.name,
+                        messageReceived.sender.pictureurl == undefined ? messageReceived.sender.pictureurl : "",
                         socket
                     ));                                                             // join
-                messageToDispatch = messageFormat("EnterRoom",roomList);     // new message
+                messageToDispatch = messageFormat("EnterRoom",roomList);        // new message
                 socket.send(messageToDispatch);
 
             case "RoomEnter" :
@@ -81,6 +79,17 @@ wss.on("connection", socket => {
                         return room.code === messageReceived.payload.code 
                             && room.id === messageReceived.payload.id;
                     });
+                if(roomselected.length == 0) {
+                    let roomid = generateUniqueRoomId();
+                    roomList.push(new room(roomid, messageType.payload.name,
+                        messageType.payload.creator, messageReceived.payload.code));                            // new room
+                    roomlist[roomlist.length - 1]
+                        .user.push(new user(
+                            messageType.sender.name,
+                            messageType.sender.pictureurl == undefined ? messageType.sender.pictureurl : "",
+                            socket
+                        ));                         
+                        }
                 console.log(roomselected,messageReceived.sender);
                 roomselected[0] && roomselected[0].user.push(new user(
                         messageReceived.sender.name,
@@ -88,7 +97,7 @@ wss.on("connection", socket => {
                             "" : messageReceived.sender.pictureurl,
                         socket
                     ));                                                             // join room
-                messageToDispatch = messageFormat("EnterRoom","Success");       // make message
+                messageToDispatch = messageFormat("EnterRoom",["success",messageReceived.payload.id]);       // make message
                 console.log(messageToDispatch);
                 socket.send(messageToDispatch);
                 break;
@@ -96,10 +105,12 @@ wss.on("connection", socket => {
             case "RoomExit" :
                 // todo here
                 // assign if not
+                console.log(roomlist,"payload",messageReceived.payload);
                 let roomselectedhere = roomlist.filter((room) => {
-                        return room.code === messageReceived.payload.code 
-                        && room.id === messageReceived.payload.id;
+                        return room.code == messageReceived.payload.code 
+                        && room.id == messageReceived.payload.id;
                 });
+                console.log("rest",roomselectedhere);
                 roomselectedhere[0].user = roomselectedhere[0].user.filter((user) => {
                     return user.name != messageReceived.sender.name
                 })
@@ -166,9 +177,8 @@ function makeid() {
     let length = 9;
     let result           = '';
     let characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let charactersLength = characters.length;
     for ( var i = 0; i < length; i++ ) {
-      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+      result += characters.charAt(Math.floor(Math.random() * characters.length));
     }
    return result;
 }
