@@ -53,7 +53,7 @@ wss.on("connection", socket => {
                 roomList[0].creator = (new Date()).toString();
                 
                 console.log(roomList[0].creator);
-                messageToDispatch = messageFormat("RoomList",roomList);
+                let messageToDispatch = messageFormat("RoomList",roomList);
                 
                 console.log("todispatch", messageToDispatch);
                 socket.send(messageToDispatch);
@@ -79,8 +79,8 @@ wss.on("connection", socket => {
                     code : roomlist[roomlist.length-1].code
                 };
                 
-                messageToDispatch = messageFormat("MakeRoom", broadcastRoom);        // new message
-                socket.send(messageToDispatch);
+                let mssageToDispatch = messageFormat("MakeRoom", broadcastRoom);        // new message
+                socket.send(mssageToDispatch);
                 console.log("doneMake")
                 break;
 
@@ -107,10 +107,10 @@ wss.on("connection", socket => {
                             "" : messageReceived.sender.pictureurl,
                         socket
                     ));                                                             // join room
-                messageToDispatch = messageFormat("EnterRoom",["success",messageReceived.payload.id]);       // make message
+                let msgeToDispatch = messageFormat("EnterRoom",["success",messageReceived.payload.id]);       // make message
                 
-                console.log(messageToDispatch);
-                socket.send(messageToDispatch);
+                console.log(msgeToDispatch);
+                socket.send(msgeToDispatch);
                 break;
 
             case "RoomExit" :
@@ -131,15 +131,30 @@ wss.on("connection", socket => {
                 console.log(roomselectedhere[0].user);
                 break;
 
-            case "SendMessage" :
-                let messageQueue = new message(MessageType.sender.name,MessageType.payload);
-                roomlist.filter((room) => {
+            case "GetMessage" :
+                let roomTemp = roomlist.filter((room) => {
                     return room.user.name == messageType.sender.name;
-                }).user.foreach((user) => {
-                    let messageToDispatch = new messageFormat("newMessage",messageQueue);
-                    user.send(messageToDispatch);
                 });
-            
+                messageToDispatch = messageFormat("NewMessage",roomTemp[0].message);       // make message
+                
+                console.log(messageToDispatch);
+                socket.send(messageToDispatch);
+                break;
+
+            case "SendMessage" :
+                let roomTmp = roomlist.filter((room) => {
+                    return room.user.name == messageReceived.sender.name;
+                });
+                roomTmp[0].message.push(new message(
+                    messageReceived.sender.name, messageReceived.payload
+                ));
+
+                let msgToDispatch = new messageFormat("newMessage",roomTmp[0].message);
+                roomTmp[0].user.foreach((user) => {
+                    user.send(msgToDispatch);
+                });
+                break;
+
             case "pong" :
                 // pong logic
 
@@ -181,7 +196,7 @@ function room(id,name,creator,code) {
 function message(sender, text) {
     this.sender = sender;
     this.text = text;
-    this.time = new Date();
+    this.time = (new Date()).toString();
 
     return this;
 }
