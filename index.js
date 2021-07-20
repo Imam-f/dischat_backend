@@ -8,19 +8,33 @@ const WebSocket = require("ws");
 const wss = new WebSocket.Server({
     port: 8081
 });
-
 console.log("Listening");
 
 let roomlist = [];
-for(i = 0; i < Math.random() * 10 ;i++) {
+for(i = 0; i < 1 + Math.random() * 10 ;i++) {
+    // Todo check if roomnumber exist
+    
+    let roomid = generateUniqueRoomId();
     roomlist.push(new room(
-        Math.floor(Math.random() * 100),
+        roomid,
         "Anything",
         "Origin",
         makeid()
     ));
 }
-let count = 0;
+
+
+// Room Pooling
+// use interval to each room
+setInterval(() => {
+    console.log("Room");
+    console.log(roomlist);
+}, 10000);
+// emptyroom get deleted
+    // User Pooling
+    // iterate over user
+    // dosconnect user removed from room
+
 
 wss.on("connection", socket => {
 
@@ -49,12 +63,9 @@ wss.on("connection", socket => {
                 break;
 
             case "RoomMake" :
+                let roomid = generateUniqueRoomId();
                 let code = makeid();
-                count += 1;
-
-                // Check if room exist
-                roomList.includes();
-                roomList.push(new room(count, messageType.namecreator,
+                roomList.push(new room(roomid, messageType.namecreator,
                     messageType.creator, code));                       // new room
                 roomlist[roomlist.length - 1]
                     .user.push(new user(
@@ -62,19 +73,30 @@ wss.on("connection", socket => {
                         messageType.sender.pictureurl == undefined ? messageType.sender.pictureurl : "",
                         socket
                     ));                                                             // join
-                messageToDispatch = new messageFormat("EnterRoom",roomList);     // new message
-                socket.send(SmessageToDispatch);
+                messageToDispatch = messageFormat("EnterRoom",roomList);     // new message
+                socket.send(messageToDispatch);
 
             case "RoomEnter" :
-                roomlist.filter((room) => {
-                        return room.code == messageType.code;
-                    }).user.push(new user(
-                        messageType.sender.name,
-                        messageType.sender.pictureurl == undefined ? messageType.sender.pictureurl : "",
+                let roomselected = roomlist.filter((room) => {
+                        return room.code === messageReceived.payload.code 
+                            && room.id === messageReceived.payload.id;
+                    });
+                console.log(roomselected,messageReceived.sender);
+                roomselected[0] && roomselected[0].user.push(new user(
+                        //messageReceived.sender.name,
+                        "",
+                        messageReceived.sender.pictureurl == undefined ? 
+                            "" : messageReceived.sender.pictureurl,
                         socket
                     ));                                                             // join room
-                messageToDispatch = new messageFormat("EnterRoom","Success");   // make message
+                messageToDispatch = messageFormat("EnterRoom","Success");       // make message
+                console.log(messageToDispatch);
                 socket.send(messageToDispatch);
+                break;
+
+            case "RoomExit" :
+                // todo here
+                
 
             case "SendMessage" :
                 let messageQueue = new message(MessageType.sender.name,MessageType.payload);
@@ -84,6 +106,9 @@ wss.on("connection", socket => {
                     let messageToDispatch = new messageFormat("newMessage",messageQueue);
                     user.send(messageToDispatch);
                 });
+            
+            case "pong" :
+                // pong logic
 
             default:
                 console.log("Unhandled");
@@ -91,13 +116,6 @@ wss.on("connection", socket => {
         }
     });
 });
-
-// Room Pooling
-// use interval to each room
-// emptyroom get deleted
-    // User Pooling
-    // iterate over user
-    // dosconnect user removed from room
 
 
 // Reference https://www.npmjs.com/package/ws
@@ -144,6 +162,19 @@ function makeid() {
       result += characters.charAt(Math.floor(Math.random() * charactersLength));
     }
    return result;
+}
+function generateUniqueRoomId() {
+    let roomid = Math.floor(Math.random() * 100);
+    while(
+        roomlist != 0
+        &&
+        !roomlist.reduce((acc,curr) => {
+            return acc || curr.id == roomid;
+        })
+    ) {
+        roomid = Math.floor(Math.random() * 100); 
+    }
+    return roomid;
 }
 
 
