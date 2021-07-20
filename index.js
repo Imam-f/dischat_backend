@@ -1,14 +1,8 @@
-/*
-const { Client } = require("pg");
-const client = new Client();
-client.connect();
-*/
-
 const WebSocket = require("ws");
 const wss = new WebSocket.Server({
-    port: 8081
+    port: process.env.PORT || 8081
 });
-console.log("Listening");
+console.log("Listening on",process.env.PORT);
 
 let roomlist = [];
 for(i = 0; i < 1 + Math.random() * 10 ;i++) {
@@ -38,13 +32,14 @@ wss.on("connection", socket => {
 
     socket.on("message", messageFromUser => {
 
-        console.log(messageFromUser)
-        let messageReceived = JSON.parse(messageFromUser)
+        console.log(messageFromUser);
+        let messageReceived = JSON.parse(messageFromUser);
         let messageType = messageReceived.type;
         console.log(messageType);
 
         let messageToDispatch = null;
         switch (messageType) {
+
             case "RoomList" :
                 let roomList = roomlist.map((elm) => {
                     return {
@@ -52,10 +47,14 @@ wss.on("connection", socket => {
                         name : elm.name,
                         creator : elm.creator,
                         code : elm.code
-                    }});
+                    }
+                });
+
                 roomList[0].creator = (new Date()).toString();
+                
                 console.log(roomList[0].creator);
                 messageToDispatch = messageFormat("RoomList",roomList);
+                
                 console.log("todispatch", messageToDispatch);
                 socket.send(messageToDispatch);
                 break;
@@ -64,6 +63,7 @@ wss.on("connection", socket => {
                 console.log("Make");
                 let roomid = generateUniqueRoomId();
                 let code = makeid();
+                
                 roomlist.push(new room(roomid, messageReceived.payload.name,
                     messageReceived.payload.creator, code));                       // new room
                 roomlist[roomlist.length - 1]
@@ -77,7 +77,8 @@ wss.on("connection", socket => {
                     name : roomlist[roomlist.length-1].name,
                     creator : roomlist[roomlist.length-1].creator,
                     code : roomlist[roomlist.length-1].code
-                }
+                };
+                
                 messageToDispatch = messageFormat("MakeRoom", broadcastRoom);        // new message
                 socket.send(messageToDispatch);
                 console.log("doneMake")
@@ -98,7 +99,7 @@ wss.on("connection", socket => {
                             messageType.sender.pictureurl == undefined ? messageType.sender.pictureurl : "",
                             socket
                         ));                         
-                        }
+                }
                 console.log(roomselected,messageReceived.sender);
                 roomselected[0] && roomselected[0].user.push(new user(
                         messageReceived.sender.name,
@@ -107,6 +108,7 @@ wss.on("connection", socket => {
                         socket
                     ));                                                             // join room
                 messageToDispatch = messageFormat("EnterRoom",["success",messageReceived.payload.id]);       // make message
+                
                 console.log(messageToDispatch);
                 socket.send(messageToDispatch);
                 break;
@@ -119,10 +121,12 @@ wss.on("connection", socket => {
                         return room.code == messageReceived.payload.code 
                         && room.id == messageReceived.payload.id;
                 });
+                
                 console.log("rest",roomselectedhere);
                 roomselectedhere[0].user = roomselectedhere[0].user.filter((user) => {
                     return user.name != messageReceived.sender.name
                 })
+                
                 console.log("Exit");
                 console.log(roomselectedhere[0].user);
                 break;
@@ -147,13 +151,13 @@ wss.on("connection", socket => {
 });
 
 
-// Reference https://www.npmjs.com/package/ws
 
 // Constructors
 function messageFormat(type, data) {
     let toReturn = {};
     toReturn.type = type;
     toReturn.data = data;
+
     return JSON.stringify(toReturn);
 }
 function user(name, pictureurl = "", connection) {
@@ -168,6 +172,7 @@ function room(id,name,creator,code) {
     this.name = name;
     this.creator = creator;
     this.code = code;
+
     this.message = [];
     this.user = [];
 
@@ -206,6 +211,7 @@ function generateUniqueRoomId() {
 }
 
 
+// Reference https://www.npmjs.com/package/ws
 // wss.on("close", () => {  })
 
 /*  Example
@@ -231,4 +237,10 @@ function generateUniqueRoomId() {
     PGPORT=3211 \
     PGDATABASE=mydb \
     node script.js
+*/
+
+/*
+const { Client } = require("pg");
+const client = new Client();
+client.connect();
 */
