@@ -22,18 +22,18 @@ for(i = 0; i < 1 + Math.random() * 10 ;i++) {
         makeid()
     ));
 }
+console.log(roomlist);
 
 
 // Room Pooling
 // use interval to each room
 setInterval(() => {
     console.log("Room");
+    // roomlist = roomlist.filter((room) => {
+    //     return room.user.length > 0;
+    // })
     console.log(roomlist);
-}, 50000);
-// emptyroom get deleted
-    // User Pooling
-    // iterate over user
-    // dosconnect user removed from room
+}, 10000);
 
 
 wss.on("connection", socket => {
@@ -54,7 +54,7 @@ wss.on("connection", socket => {
                         name : elm.name,
                         creator : elm.creator,
                         code : elm.code
-                    }})
+                    }});
                 roomList[0].creator = (new Date()).toString();
                 console.log(roomList[0].creator);
                 messageToDispatch = messageFormat("RoomList",roomList);
