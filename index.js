@@ -4,7 +4,7 @@ const wss = new WebSocket.Server({
 });
 console.log("Listening on",process.env.PORT);
 
-let roomlist = [];
+var roomlist = [];
 for(i = 0; i < 1 + Math.random() * 10 ;i++) {
     let roomid = generateUniqueRoomId();
     roomlist.push(new room(
@@ -32,10 +32,8 @@ wss.on("connection", socket => {
 
     socket.on("message", messageFromUser => {
 
-        console.log(messageFromUser);
         let messageReceived = JSON.parse(messageFromUser);
         let messageType = messageReceived.type;
-        console.log(messageType);
 
         let messageToDispatch = null;
         switch (messageType) {
@@ -52,15 +50,12 @@ wss.on("connection", socket => {
 
                 roomList[0].creator = (new Date()).toString();
                 
-                console.log(roomList[0].creator);
                 let messageToDispatch = messageFormat("RoomList",roomList);
                 
-                console.log("todispatch", messageToDispatch);
                 socket.send(messageToDispatch);
                 break;
 
             case "RoomMake" :
-                console.log("Make");
                 let roomid = generateUniqueRoomId();
                 let code = makeid();
                 
@@ -81,7 +76,6 @@ wss.on("connection", socket => {
                 
                 let mssageToDispatch = messageFormat("MakeRoom", broadcastRoom);        // new message
                 socket.send(mssageToDispatch);
-                console.log("doneMake")
                 break;
 
             case "RoomEnter" :
@@ -100,7 +94,6 @@ wss.on("connection", socket => {
                             socket
                         ));                         
                 }
-                console.log(roomselected,messageReceived.sender);
                 roomselected[0] && roomselected[0].user.push(new user(
                         messageReceived.sender.name,
                         messageReceived.sender.pictureurl == undefined ? 
@@ -109,26 +102,22 @@ wss.on("connection", socket => {
                     ));                                                             // join room
                 let msgeToDispatch = messageFormat("EnterRoom",["success",messageReceived.payload.id]);       // make message
                 
-                console.log(msgeToDispatch);
                 socket.send(msgeToDispatch);
                 break;
 
             case "RoomExit" :
                 // todo here
                 // assign if not
-                console.log(roomlist,"payload",messageReceived.payload);
                 let roomselectedhere = roomlist.filter((room) => {
                         return room.code == messageReceived.payload.code 
                         && room.id == messageReceived.payload.id;
                 });
                 
-                console.log("rest",roomselectedhere);
+                if(roomselectedhere.length == 0) break;
                 roomselectedhere[0].user = roomselectedhere[0].user.filter((user) => {
                     return user.name != messageReceived.sender.name
                 })
                 
-                console.log("Exit");
-                console.log(roomselectedhere[0].user);
                 break;
 
             case "GetMessage" :
@@ -138,7 +127,6 @@ wss.on("connection", socket => {
                 let mgeToDispatch = messageFormat("NewMessage",
                     roomTemp[0] == undefined ? "" : roomTemp[0].message);       // make message
                 
-                console.log("MGE",mgeToDispatch);
                 socket.send(mgeToDispatch);
                 break;
 
@@ -148,7 +136,6 @@ wss.on("connection", socket => {
                         return acc || (curr.name == messageReceived.sender.name)
                     },0);
                 });
-                console.log(roomTmp);
                 roomTmp[0].message.push(new message(
                     messageReceived.sender.name, messageReceived.payload
                 ));
@@ -156,7 +143,6 @@ wss.on("connection", socket => {
                 let msgToDispatch = messageFormat("NewMessage", 
                     roomTmp[0] == undefined ? "" : roomTmp[0].message);       // make message
                 roomTmp[0].user.forEach((user) => {
-                    console.log("Hehehe", msgToDispatch);
                     user.connection.send(msgToDispatch);
                 });
                 break;
@@ -165,7 +151,6 @@ wss.on("connection", socket => {
                 // pong logic
 
             default:
-                console.log("Unhandled");
                 break;
         }
     });
