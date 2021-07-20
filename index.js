@@ -29,7 +29,7 @@ for(i = 0; i < 1 + Math.random() * 10 ;i++) {
 setInterval(() => {
     console.log("Room");
     console.log(roomlist);
-}, 10000);
+}, 50000);
 // emptyroom get deleted
     // User Pooling
     // iterate over user
@@ -83,8 +83,7 @@ wss.on("connection", socket => {
                     });
                 console.log(roomselected,messageReceived.sender);
                 roomselected[0] && roomselected[0].user.push(new user(
-                        //messageReceived.sender.name,
-                        "",
+                        messageReceived.sender.name,
                         messageReceived.sender.pictureurl == undefined ? 
                             "" : messageReceived.sender.pictureurl,
                         socket
@@ -96,7 +95,17 @@ wss.on("connection", socket => {
 
             case "RoomExit" :
                 // todo here
-                
+                // assign if not
+                let roomselectedhere = roomlist.filter((room) => {
+                        return room.code === messageReceived.payload.code 
+                        && room.id === messageReceived.payload.id;
+                });
+                roomselectedhere[0].user = roomselectedhere[0].user.filter((user) => {
+                    return user.name != messageReceived.sender.name
+                })
+                console.log("Exit");
+                console.log(roomselectedhere[0].user);
+                break;
 
             case "SendMessage" :
                 let messageQueue = new message(MessageType.sender.name,MessageType.payload);
