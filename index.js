@@ -35,11 +35,10 @@ wss.on("connection", socket => {
         let messageReceived = JSON.parse(messageFromUser);
         let messageType = messageReceived.type;
 
-        let messageToDispatch = null;
         switch (messageType) {
 
             case "RoomList" :
-                let roomList = roomlist.map((elm) => {
+                let roomlst = roomlist.map((elm) => {
                     return {
                         id : elm.id,
                         name : elm.name,
@@ -48,9 +47,9 @@ wss.on("connection", socket => {
                     }
                 });
 
-                roomList[0].creator = (new Date()).toString();
+                roomlst[0].creator = (new Date()).toString();
                 
-                let messageToDispatch = messageFormat("RoomList",roomList);
+                let messageToDispatch = messageFormat("RoomList",roomlst);
                 
                 socket.send(messageToDispatch);
                 break;
@@ -85,7 +84,7 @@ wss.on("connection", socket => {
                     });
                 if(roomselected.length == 0) {
                     let roomid = generateUniqueRoomId();
-                    roomList.push(new room(roomid, messageType.payload.name,
+                    roomlist.push(new room(roomid, messageType.payload.name,
                         messageType.payload.creator, messageReceived.payload.code));                            // new room
                     roomlist[roomlist.length - 1]
                         .user.push(new user(
@@ -122,10 +121,12 @@ wss.on("connection", socket => {
 
             case "GetMessage" :
                 let roomTemp = roomlist.filter((room) => {
-                    return room.user.name == messageReceived.sender.name;
+                    return room.user.reduce((acc, curr) => {
+                        return acc || curr.name == messageReceived.sender.name;
+                    },false);
                 });
                 let mgeToDispatch = messageFormat("NewMessage",
-                    roomTemp[0] == undefined ? "" : roomTemp[0].message);       // make message
+                    roomTemp[0] == undefined ? new Array() : roomTemp[0].message);       // make message
                 
                 socket.send(mgeToDispatch);
                 break;
