@@ -38,6 +38,7 @@ wss.on("connection", socket => {
 
     socket.on("message", messageFromUser => {
         while(roomcheckmutex) {}
+        roomcheckmutex = true;
         let messageReceived = JSON.parse(messageFromUser);
         let messageType = messageReceived.type;
 
