@@ -31,7 +31,7 @@ setInterval(() => {
     
     roomcheckmutex = false;
     // console.log(roomlist);
-}, 10000);
+}, 60000);
 
 
 wss.on("connection", socket => {
