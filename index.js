@@ -5,6 +5,7 @@ const wss = new WebSocket.Server({
 console.log("Listening on",process.env.PORT);
 
 var roomlist = [];
+var roomcheckmutex = false;
 for(i = 0; i < 1 + Math.random() * 10 ;i++) {
     let roomid = generateUniqueRoomId();
     roomlist.push(new room(
@@ -21,9 +22,14 @@ console.log(roomlist);
 // use interval to each room
 setInterval(() => {
     console.log("Room");
-    // roomlist = roomlist.filter((room) => {
-    //     return room.user.length > 0;
-    // })
+
+    while(roomcheckmutex) {}
+    roomcheckmutex = true;
+    roomlist = roomlist.filter((room) => {
+        return (room.user.length > 0) || (room.message.length > 0);
+    })
+    
+    roomcheckmutex = false;
     // console.log(roomlist);
 }, 10000);
 
@@ -31,7 +37,7 @@ setInterval(() => {
 wss.on("connection", socket => {
 
     socket.on("message", messageFromUser => {
-
+        while(roomcheckmutex) {}
         let messageReceived = JSON.parse(messageFromUser);
         let messageType = messageReceived.type;
 
@@ -46,9 +52,7 @@ wss.on("connection", socket => {
                         code : elm.code
                     }
                 });
-
-                roomlst[0].creator = (new Date()).toString();
-                
+                // roomlst[0].creator = (new Date()).toString();
                 let messageToDispatch = messageFormat("RoomList",roomlst);
                 
                 socket.send(messageToDispatch);
@@ -154,6 +158,7 @@ wss.on("connection", socket => {
             default:
                 break;
         }
+        roomcheckmutex = false;
     });
 });
 
