@@ -133,25 +133,31 @@ wss.on("connection", socket => {
 
             case "GetMessage" :
                 let roomTemp = roomlist.filter((room) => {
-                    return room.user.name == messageType.sender.name;
+                    return room.user.name == messageReceived.sender.name;
                 });
-                messageToDispatch = messageFormat("NewMessage",roomTemp[0].message);       // make message
+                let mgeToDispatch = messageFormat("NewMessage",
+                    roomTemp[0] == undefined ? "" : roomTemp[0].message);       // make message
                 
-                console.log(messageToDispatch);
-                socket.send(messageToDispatch);
+                console.log("MGE",mgeToDispatch);
+                socket.send(mgeToDispatch);
                 break;
 
             case "SendMessage" :
                 let roomTmp = roomlist.filter((room) => {
-                    return room.user.name == messageReceived.sender.name;
+                    return room.user.reduce((acc, curr) => {
+                        return acc || (curr.name == messageReceived.sender.name)
+                    },0);
                 });
+                console.log(roomTmp);
                 roomTmp[0].message.push(new message(
                     messageReceived.sender.name, messageReceived.payload
                 ));
-
-                let msgToDispatch = new messageFormat("newMessage",roomTmp[0].message);
-                roomTmp[0].user.foreach((user) => {
-                    user.send(msgToDispatch);
+                    
+                let msgToDispatch = messageFormat("NewMessage", 
+                    roomTmp[0] == undefined ? "" : roomTmp[0].message);       // make message
+                roomTmp[0].user.forEach((user) => {
+                    console.log("Hehehe", msgToDispatch);
+                    user.connection.send(msgToDispatch);
                 });
                 break;
 
