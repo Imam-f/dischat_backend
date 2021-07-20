@@ -1,11 +1,15 @@
+/*
 const { Client } = require("pg");
 const client = new Client();
 client.connect();
+*/
 
 const WebSocket = require("ws");
 const wss = new WebSocket.Server({
-    port: process.env.PORT || "8081"
+    port: 8081
 });
+
+console.log("Listening");
 
 roomlist = [];
 let count = 0;
@@ -14,10 +18,14 @@ wss.on("connection", socket => {
 
     socket.on("message", messageFromUser => {
 
-        messageType = JSON.parse(messageFromUser);
+        console.log(messageFromUser)
+        let messageReceived = JSON.parse(messageFromUser)
+        let messageType = messageReceived.type;
+        console.log(messageType);
+
+        let messageToDispatch = null;
         switch (messageType) {
-            case "RoomList" :
-                // find room
+            case 'RoomList' :
                 roomList = roomlist.map((elm) => {
                     return {
                         id : elm.id,
@@ -25,13 +33,17 @@ wss.on("connection", socket => {
                         creator : elm.creator,
                         code : elm.code
                     }})
-                // new message
-                let messageToDispatch = new messageFormat("RoomList",roomList);
+                messageToDispatch = messageFormat("RoomList",roomList);
+                console.log("todispatch", messageToDispatch);
                 socket.send(messageToDispatch);
+                break;
 
             case "RoomMake" :
                 let code = makeid();
                 count += 1;
+
+                // Check if room exist
+                roomList.includes();
                 roomList.push(new room(count, messageType.namecreator,
                     messageType.creator, code));                       // new room
                 roomlist[roomlist.length - 1]
@@ -39,9 +51,9 @@ wss.on("connection", socket => {
                         messageType.sender.name,
                         messageType.sender.pictureurl == undefined ? messageType.sender.pictureurl : "",
                         socket
-                    ));                                                // join
-                let messageToDispatch = new messageFormat("EnterRoom",roomList);     // new message
-                socket.send(messageToDispatch);
+                    ));                                                             // join
+                messageToDispatch = new messageFormat("EnterRoom",roomList);     // new message
+                socket.send(SmessageToDispatch);
 
             case "RoomEnter" :
                 roomlist.filter((room) => {
@@ -50,24 +62,21 @@ wss.on("connection", socket => {
                         messageType.sender.name,
                         messageType.sender.pictureurl == undefined ? messageType.sender.pictureurl : "",
                         socket
-                    ));                                                   // join room
-                let messageToDispatch = new messageFormat("EnterRoom","Success");   // make message
+                    ));                                                             // join room
+                messageToDispatch = new messageFormat("EnterRoom","Success");   // make message
                 socket.send(messageToDispatch);
-            
+
             case "SendMessage" :
-                // make message
-                // asign message to room
-                // broadcast in room
-                // dispatch message
                 let messageQueue = new message(MessageType.sender.name,MessageType.payload);
                 roomlist.filter((room) => {
                     return room.user.name == messageType.sender.name;
                 }).user.foreach((user) => {
-                    let messageToBroadcast = new messageFormat("newMessage",messageQueue);
-                    user.send(messageToBroadcast);
+                    let messageToDispatch = new messageFormat("newMessage",messageQueue);
+                    user.send(messageToDispatch);
                 });
 
             default:
+                console.log("Unhandled");
                 break;
         }
     });
@@ -85,9 +94,10 @@ wss.on("connection", socket => {
 
 // Constructors
 function messageFormat(type, data) {
-    this.type = type;
-    this.data = data;
-    return JSON.stringify(messageFormat);
+    let toReturn = {};
+    toReturn.type = type;
+    toReturn.data = data;
+    return JSON.stringify(toReturn);
 }
 function user(name, pictureurl = "", connection) {
     this.name = name;
