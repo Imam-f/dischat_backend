@@ -61,18 +61,27 @@ wss.on("connection", socket => {
                 break;
 
             case "RoomMake" :
+                console.log("Make");
                 let roomid = generateUniqueRoomId();
                 let code = makeid();
-                roomList.push(new room(roomid, messageReceived.namecreator,
-                    messageReceived.creator, code));                       // new room
+                roomlist.push(new room(roomid, messageReceived.payload.name,
+                    messageReceived.payload.creator, code));                       // new room
                 roomlist[roomlist.length - 1]
                     .user.push(new user(
                         messageReceived.sender.name,
                         messageReceived.sender.pictureurl == undefined ? messageReceived.sender.pictureurl : "",
                         socket
                     ));                                                             // join
-                messageToDispatch = messageFormat("EnterRoom",roomList);        // new message
+                let broadcastRoom = {
+                    id : roomlist[roomlist.length-1].id,
+                    name : roomlist[roomlist.length-1].name,
+                    creator : roomlist[roomlist.length-1].creator,
+                    code : roomlist[roomlist.length-1].code
+                }
+                messageToDispatch = messageFormat("MakeRoom", broadcastRoom);        // new message
                 socket.send(messageToDispatch);
+                console.log("doneMake")
+                break;
 
             case "RoomEnter" :
                 let roomselected = roomlist.filter((room) => {
