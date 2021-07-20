@@ -11,7 +11,15 @@ const wss = new WebSocket.Server({
 
 console.log("Listening");
 
-roomlist = [];
+let roomlist = [];
+for(i = 0; i < Math.random() * 10 ;i++) {
+    roomlist.push(new room(
+        Math.floor(Math.random() * 100),
+        "Anything",
+        "Origin",
+        makeid()
+    ));
+}
 let count = 0;
 
 wss.on("connection", socket => {
@@ -26,13 +34,15 @@ wss.on("connection", socket => {
         let messageToDispatch = null;
         switch (messageType) {
             case 'RoomList' :
-                roomList = roomlist.map((elm) => {
+                let roomList = roomlist.map((elm) => {
                     return {
                         id : elm.id,
                         name : elm.name,
                         creator : elm.creator,
                         code : elm.code
                     }})
+                roomList[0].creator = (new Date()).toString();
+                console.log(roomList[0].creator);
                 messageToDispatch = messageFormat("RoomList",roomList);
                 console.log("todispatch", messageToDispatch);
                 socket.send(messageToDispatch);
