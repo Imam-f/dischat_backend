@@ -244,11 +244,11 @@ function generateUniqueRoomId() {
 */
 
 /*
-    PGUSER=dbuser \
-    PGPASSWORD=secretpassword \
-    PGHOST=database.server.com \
-    PGPORT=3211 \
-    PGDATABASE=mydb \
+    PGUSER=postgres \
+    PGPASSWORD=example \
+    PGHOST=localhost \
+    PGPORT=5432 \
+    PGDATABASE=postgres \
     node script.js
 */
 
