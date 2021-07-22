@@ -8,6 +8,7 @@ const client = new Client({
 client.connect();
 console.log("Connect to database");
 
+console.log('no err 1');
 // =============================================
 
 const WebSocket = require("ws");
@@ -16,6 +17,7 @@ const wss = new WebSocket.Server({
 });
 console.log("Listening on", process.env.PORT);
 
+console.log('no err 2');
 // ==============================================
 
 var roomlist = [];
@@ -64,10 +66,14 @@ var connectionlist = new Map();
 
 setInterval(() => {
     console.log("Room");
+    console.log('no err 3');
 
-    while(roomcheckmutex) {}
-    roomcheckmutex = true;
+    // console.log('no err loop3');
+    // while(roomcheckmutex) {}
+    // console.log('no err loop4');
+    // roomcheckmutex = true;
     
+    // todo
     // Get room idle room
     // Delete idle room
 
@@ -83,7 +89,7 @@ setInterval(() => {
     })
 
     roomcheckmutex = false;
-    console.log(roomlist);
+    console.log('no err 4');
 }, 60000);
 
 // ===============================================
@@ -93,15 +99,19 @@ wss.on("connection", socket => {
     socket.on("message", async messageFromUser => {
 
         // Parse message
-        while(roomcheckmutex) {}
-        roomcheckmutex = true;
-
         let messageReceived = JSON.parse(messageFromUser);
         let messageType = messageReceived.type;
         if(messageType == "pong") {
             connectionlist.set(messageReceived.sender.name, socket);
             return;
         }
+        console.log('no err 5');
+
+        // console.log('no err loop1');
+        // while(roomcheckmutex) {}
+        // console.log('no err loop2');
+        // roomcheckmutex = true;
+
 
         // pull database
         // todo pull message
@@ -150,7 +160,7 @@ wss.on("connection", socket => {
                 };
             });
         });
-        console.log("down",roomlist);
+        console.log('no err 6');
 
 
 
@@ -158,6 +168,7 @@ wss.on("connection", socket => {
 
             
             case "RoomList" :
+                console.log('no err 7');
                 // Interaction == roomlist
 
                 let roomlst = roomlist.map((elm) => {
@@ -175,6 +186,7 @@ wss.on("connection", socket => {
 
 
             case "RoomMake" :
+                console.log('no err 8');
                 // Interaction == roomlist, user
 
                 let roomid = generateUniqueRoomId();
@@ -201,6 +213,7 @@ wss.on("connection", socket => {
 
                 
             case "RoomEnter" :
+                console.log('no err 9');
                 // Interaction == roomlist, user
 
                 let roomselected = roomlist.filter((room) => {
@@ -234,6 +247,7 @@ wss.on("connection", socket => {
 
 
             case "RoomExit" :
+                console.log('no err 10');
                 // Interaction == roomlist, user
 
                 let roomselectedhere = roomlist.filter((room) => {
@@ -250,6 +264,7 @@ wss.on("connection", socket => {
 
 
             case "GetMessage" :
+                console.log('no err 11');
                 // Interaction == roomlist, user, data
 
                 let roomTemp = roomlist.filter((room) => {
@@ -265,6 +280,7 @@ wss.on("connection", socket => {
 
 
             case "SendMessage" :
+                console.log('no err 12');
                 // Interaction == roomlist, user, data
 
                 let roomTmp = roomlist.filter((room) => {
@@ -291,12 +307,16 @@ wss.on("connection", socket => {
         }
 
         // update database
+        console.log('no err 13');
         if(isChanged) {
+            console.log('no err 17');
             // clear database
+            prlist = [];
             prlist[0] = client.query("DELETE FROM room WHERE true");
             prlist[1] = client.query("DELETE FROM user WHERE true");
             prlist[2] = client.query("DELETE FROM message WHERE true");
-            await Promise.all(prlist);
+            await Promise.all(prlist).catch((e)=>{console.log});
+            console.log('no err 14');
             
             // push room
             var counteruser = 0;
@@ -310,6 +330,7 @@ wss.on("connection", socket => {
                 + "','" + room.code + "');";
                 prlistn.push(client.query(querystring));
 
+                console.log('no err 15');
                 // push user
                 room.user.forEach(user => {
                     querystring = "INSERT INTO user VALUES (" +
@@ -321,6 +342,7 @@ wss.on("connection", socket => {
                     prlistn.push(client.query(querystring));
                 });
 
+                console.log('no err 16');
                 // push message
                 room.message.forEach(message => {
                     querystring = "INSERT INTO message VALUES (" +
@@ -333,10 +355,11 @@ wss.on("connection", socket => {
                     prlistn.push(client.query(querystring));
                 });
             });
+            console.log('no err 18');
             await Promise.all(prlistn);
         }
 
-        roomcheckmutex = false;
+        // roomcheckmutex = false;
     });
 });
 
