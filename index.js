@@ -62,18 +62,29 @@ var connectionlist = new Map();
 
 // Disabled for database experiment
 
-// setInterval(() => {
-//     console.log("Room");
+setInterval(() => {
+    console.log("Room");
 
-//     while(roomcheckmutex) {}
-//     roomcheckmutex = true;
-//     roomlist = roomlist.filter((room) => {
-//         return (room.user.length > 0) || (room.message.length > 0);
-//     });
+    while(roomcheckmutex) {}
+    roomcheckmutex = true;
     
-//     roomcheckmutex = false;
-//     // console.log(roomlist);
-// }, 60000);
+    // Get room idle room
+    // Delete idle room
+
+
+    // Get inactive user
+    let toErase = []
+    connectionlist.forEach((user,key) => {
+        user.send("ping");
+        toErase.push(key);
+    });
+    toErase.forEach(val => {
+        connectionlist.delete(toErase);
+    })
+
+    roomcheckmutex = false;
+    console.log(roomlist);
+}, 60000);
 
 // ===============================================
 
@@ -87,7 +98,10 @@ wss.on("connection", socket => {
 
         let messageReceived = JSON.parse(messageFromUser);
         let messageType = messageReceived.type;
-
+        if(messageType == "pong") {
+            connectionlist.set(messageReceived.sender.name, socket);
+            return;
+        }
 
         // pull database
         // todo pull message
@@ -268,10 +282,6 @@ wss.on("connection", socket => {
                     user.connection && user.connection.send(msgToDispatch);
                 });
                 break;
-
-
-            case "pong" :
-                // pong logic
 
 
             default:
