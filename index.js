@@ -87,7 +87,7 @@ setInterval(() => {
     });
     toErase.forEach(val => {
         connectionlist.delete(toErase);
-    })
+    });
 
     roomcheckmutex = false;
     // console.log('no err 4');
@@ -99,6 +99,7 @@ wss.on("connection", socket => {
 
     socket.on("message", async messageFromUser => {
 
+
         // Parse message
         let messageReceived = JSON.parse(messageFromUser);
         let messageType = messageReceived.type;
@@ -108,13 +109,13 @@ wss.on("connection", socket => {
             return;
         }
         console.log(messageType,"Type");
-        console.log('no err 5');
 
         // console.log('no err loop1');
         // while(roomcheckmutex) {}
         // console.log('no err loop2');
         // roomcheckmutex = true;
-
+        
+        console.log('no err 5');
 
         // pull database
         // todo pull message
@@ -363,7 +364,9 @@ wss.on("connection", socket => {
                 console.log("no err rpt")
             });
             console.log('no err 18');
-            await Promise.all(prlistn).catch((e)=>console.log(e));
+            Promise.all(prlistn).catch((e)=>console.log(e));
+            console.log('no err 18a');
+            // roomcheckmutex = false;
         }
 
         console.log("-");
