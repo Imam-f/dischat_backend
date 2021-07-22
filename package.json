@@ -20,6 +20,7 @@
   "homepage": "https://github.com/Imam-f/dischat_backend#readme",
   "dependencies": {
     "nodemon": "^2.0.12",
+    "pg": "^8.6.0",
     "ws": "^7.5.3"
   }
 }

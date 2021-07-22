@@ -1,22 +1,58 @@
+const { Client } = require("pg");
+const client = new Client({
+    host: "localhost",
+    user: "postgres",
+    password: "example",
+    database: "postgres"
+});
+client.connect();
+console.log("Connect to database");
+
+// =============================================
+
 const WebSocket = require("ws");
 const wss = new WebSocket.Server({
     port: process.env.PORT || 8081
 });
-console.log("Listening on",process.env.PORT);
+console.log("Listening on", process.env.PORT);
+
+// ==============================================
 
 var roomlist = [];
 var roomcheckmutex = false;
-for(i = 0; i < 1 + Math.random() * 10 ;i++) {
-    let roomid = generateUniqueRoomId();
-    roomlist.push(new room(
-        roomid,
-        "Anything",
-        "Origin",
-        makeid()
-    ));
-}
-console.log(roomlist);
 
+// client.query("SELECT * FROM room",(err,res) => {
+//     console.log("Inside Query",res);
+//     res.rows.forEach(row => {
+//         roomlist.push(new room(
+//             row.id,
+//             row.name,
+//             row.creator,
+//             row.code
+//         ));
+//     })
+// });
+
+// for(i = 0; i < 1 + Math.random() * 10 ;i++) {
+//     let roomid = generateUniqueRoomId();
+//     roomlist.push(new room(
+//         roomid,
+//         "Anything",
+//         "Origin",
+//         makeid()
+//     ));
+// }
+
+// roomlist.forEach(room => {
+//     let qr = "INSERT INTO room " +
+//         `VALUES (${room.id}, '${room.name}', '${room.creator}',`
+//         + ` '${room.code}');`;
+//     console.log(qr);
+//     client.query(qr);
+// })
+
+
+// ==============================================
 
 // Room Pooling
 // use interval to each room
@@ -27,16 +63,36 @@ setInterval(() => {
     roomcheckmutex = true;
     roomlist = roomlist.filter((room) => {
         return (room.user.length > 0) || (room.message.length > 0);
-    })
+    });
     
     roomcheckmutex = false;
     // console.log(roomlist);
 }, 60000);
 
+// ===============================================
 
 wss.on("connection", socket => {
 
-    socket.on("message", messageFromUser => {
+    socket.on("message", async messageFromUser => {
+
+        // pull database
+        // todo pull message
+        // todo pull user
+        // todo update connection per user
+        console.log("up");
+        roomlist = [];
+        let res = await client.query("SELECT * FROM room");
+        res.rows.map(row => {
+            console.log(row);
+            roomlist.push(new room(
+                row.id,
+                row.name,
+                row.creator,
+                row.code
+            ));
+        });
+        console.log("down",roomlist);
+
         while(roomcheckmutex) {}
         roomcheckmutex = true;
         let messageReceived = JSON.parse(messageFromUser);
@@ -160,10 +216,11 @@ wss.on("connection", socket => {
                 break;
         }
         roomcheckmutex = false;
+        // update database
     });
 });
 
-
+// =================================================
 
 // Constructors
 function messageFormat(type, data) {
@@ -198,6 +255,8 @@ function message(sender, text) {
 
     return this;
 }
+
+// ================================================
 
 // ID generator
 function makeid() {
@@ -250,10 +309,4 @@ function generateUniqueRoomId() {
     PGPORT=5432 \
     PGDATABASE=postgres \
     node script.js
-*/
-
-/*
-const { Client } = require("pg");
-const client = new Client();
-client.connect();
 */
