@@ -117,14 +117,12 @@ wss.on("connection", socket => {
         // todo pull message
         // todo pull user
         // todo update connection per user
-        console.log("up");
         let isChanged = true;
         roomlist = [];
         let roomQuery = await client.query("SELECT * FROM room");
-        let userQuery = await client.query("SELECT * FROM user");
+        let userQuery = await client.query("SELECT * FROM users");
         let messageQuery = await client.query("SELECT * FROM message");
         roomQuery.rows.map(row => {
-            console.log(row);
             roomlist.push(new room(
                 row.id,
                 row.name,
@@ -133,21 +131,20 @@ wss.on("connection", socket => {
             ));
 
             // push user
-            userQuery.rows.forEach((user) => {
-                if(user.roomid == row.id) {
+            userQuery.rows.forEach((users) => {
+                if(users.roomid == row.id) {
                     
                     // corelate user and connection
-                    let connectiondata = (connectionlist.has(user.name)) ? 
-                            connectionlist.get(user.name) : null;
+                    let connectiondata = (connectionlist.has(users.name)) ? 
+                            connectionlist.get(users.name) : null;
 
                     roomlist[roomlist.length - 1].user.push(new user(
-                        user.name,
-                        user.pictureurl,
+                        users.name,
+                        users.pictureurl,
                         connectiondata
                     ));
                 }
             });
-            roomlist[roomlist.length - 1].message;
             
             // push message
             messageQuery.rows.forEach((message) => {
@@ -160,6 +157,7 @@ wss.on("connection", socket => {
                 };
             });
         });
+        console.log("ROOMLIST",roomlist);
         console.log('no err 6');
 
 
@@ -222,12 +220,12 @@ wss.on("connection", socket => {
                     });
                 if(roomselected.length == 0) {
                     let roomid = generateUniqueRoomId();
-                    roomlist.push(new room(roomid, messageType.payload.name,
-                        messageType.payload.creator, messageReceived.payload.code));                            // new room
+                    roomlist.push(new room(roomid, messageReceived.payload.name,
+                        messageReceived.payload.creator, messageReceived.payload.code));                            // new room
                     roomlist[roomlist.length - 1]
                         .user.push(new user(
-                            messageType.sender.name,
-                            messageType.sender.pictureurl == undefined ? messageType.sender.pictureurl : "",
+                            messageReceived.sender.name,
+                            messageReceived.sender.pictureurl == undefined ? messageReceived.sender.pictureurl : "",
                             socket
                         ));                         
                 }
@@ -260,6 +258,8 @@ wss.on("connection", socket => {
                     return user.name != messageReceived.sender.name
                 });
                 
+                let mseToDispatch = messageFormat("ExitRoom","Success");       // make message
+                socket.send(mseToDispatch);
                 break;
 
 
@@ -288,6 +288,9 @@ wss.on("connection", socket => {
                         return acc || (curr.name == messageReceived.sender.name)
                     },0);
                 });
+                
+                if(roomTmp[0]) break;
+
                 roomTmp[0].message.push(new message(
                     messageReceived.sender.name, messageReceived.payload
                 ));
@@ -313,7 +316,7 @@ wss.on("connection", socket => {
             // clear database
             prlist = [];
             prlist[0] = client.query("DELETE FROM room WHERE true");
-            prlist[1] = client.query("DELETE FROM user WHERE true");
+            prlist[1] = client.query("DELETE FROM users WHERE true");
             prlist[2] = client.query("DELETE FROM message WHERE true");
             await Promise.all(prlist).catch((e)=>{console.log});
             console.log('no err 14');
@@ -323,42 +326,34 @@ wss.on("connection", socket => {
             var countermessage = 0;
             prlistn = [];
             roomlist.forEach((room) => {
-                let querystring = "INSERT INTO room VALUES (" +
-                + room.id.toString()
-                + ",'" + room.name
-                + "','" + room.creator
-                + "','" + room.code + "');";
+                let querystring = "INSERT INTO room VALUES (" + "'" + room.name + "','" + room.creator + "','" + room.code + "');";
+                console.log(querystring);
                 prlistn.push(client.query(querystring));
 
                 console.log('no err 15');
                 // push user
                 room.user.forEach(user => {
-                    querystring = "INSERT INTO user VALUES (" +
-                    + counteruser.toString()
-                    + ",'" + user.name
-                    + "','" + user.pictureurl
-                    + "'," + room.id.toString() + ");";
                     counteruser += 1;
+                    querystring = "INSERT INTO users VALUES (" + "'" + user.name + "','" + user.pictureurl + "'," + room.id.toString() + ");";
+                    console.log(querystring,counteruser);
                     prlistn.push(client.query(querystring));
                 });
 
                 console.log('no err 16');
                 // push message
                 room.message.forEach(message => {
-                    querystring = "INSERT INTO message VALUES (" +
-                    + countermessage.toString()
-                    + ",'" + message.sender
-                    + "','" + message.text 
-                    + "','" + message.time 
-                    + "'," + room.id.toString() + ");";
                     countermessage += 1;
+                    querystring = "INSERT INTO message VALUES (" + "'" + message.sender + "','" + message.text + "','" + message.time + "'," + room.id.toString() + ");";
+                    console.log(querystring,countermessage);
                     prlistn.push(client.query(querystring));
                 });
             });
             console.log('no err 18');
-            await Promise.all(prlistn);
+            await Promise.all(prlistn).catch(()=>console.log);
         }
 
+        console.log("-");
+        console.log("-");
         // roomcheckmutex = false;
     });
 });
