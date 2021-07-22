@@ -119,7 +119,7 @@ wss.on("connection", socket => {
                     roomlist[roomlist.length - 1].user.push(new user(
                         user.name,
                         user.pictureurl,
-                        connectiondata,
+                        connectiondata
                     ));
                 }
             });
@@ -213,6 +213,9 @@ wss.on("connection", socket => {
                 let msgeToDispatch = messageFormat("EnterRoom",["success",messageReceived.payload.id]);       // make message
                 
                 socket.send(msgeToDispatch);
+
+                // User to room create mapping
+                connectionlist.set(messageReceived.sender.name, socket);
                 break;
 
 
