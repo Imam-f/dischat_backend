@@ -20,8 +20,8 @@ console.log("Listening on", process.env.PORT);
 console.log('no err 2');
 // ==============================================
 
-var roomlist = [];
-var roomcheckmutex = false;
+// var roomlist = [];
+// var roomcheckmutex = false;
 var connectionlist = new Map();
 
 // ----------------------------------------------
@@ -65,8 +65,8 @@ var connectionlist = new Map();
 // Disabled for database experiment
 
 setInterval(() => {
-    console.log("Room");
-    console.log('no err 3');
+    // console.log("Room");
+    // console.log('no err 3');
 
     // console.log('no err loop3');
     // while(roomcheckmutex) {}
@@ -81,7 +81,8 @@ setInterval(() => {
     // Get inactive user
     let toErase = []
     connectionlist.forEach((user,key) => {
-        user.send("ping");
+        user.send(messageFormat("ping","ping"));
+        // console.log(key);
         toErase.push(key);
     });
     toErase.forEach(val => {
@@ -89,8 +90,8 @@ setInterval(() => {
     })
 
     roomcheckmutex = false;
-    console.log('no err 4');
-}, 60000);
+    // console.log('no err 4');
+}, 5000);
 
 // ===============================================
 
@@ -102,9 +103,11 @@ wss.on("connection", socket => {
         let messageReceived = JSON.parse(messageFromUser);
         let messageType = messageReceived.type;
         if(messageType == "pong") {
+            // console.log("Active");
             connectionlist.set(messageReceived.sender.name, socket);
             return;
         }
+        console.log(messageType,"Type");
         console.log('no err 5');
 
         // console.log('no err loop1');
@@ -117,11 +120,11 @@ wss.on("connection", socket => {
         // todo pull message
         // todo pull user
         // todo update connection per user
-        let isChanged = true;
-        roomlist = [];
-        let roomQuery = await client.query("SELECT * FROM room");
+        var isChanged = true;
+        let roomlist = [];
         let userQuery = await client.query("SELECT * FROM users");
         let messageQuery = await client.query("SELECT * FROM message");
+        let roomQuery = await client.query("SELECT * FROM room");
         roomQuery.rows.map(row => {
             roomlist.push(new room(
                 row.id,
@@ -129,6 +132,8 @@ wss.on("connection", socket => {
                 row.creator,
                 row.code
             ));
+            roomlist[roomlist.length - 1].message = [];
+            roomlist[roomlist.length - 1].user = [];
 
             // push user
             userQuery.rows.forEach((users) => {
@@ -147,19 +152,19 @@ wss.on("connection", socket => {
             });
             
             // push message
-            messageQuery.rows.forEach((message) => {
-                if(message.roomid == row.id) {
+            messageQuery.rows.forEach((messageq) => {
+                if(messageq.roomid == row.id) {
                     roomlist[roomlist.length - 1].message.push(new message(
-                        message.sender,
-                        message.text,
-                        message.time
+                        messageq.sender,
+                        messageq.text,
+                        messageq.time
                     ));
                 };
             });
         });
-        console.log("ROOMLIST",roomlist);
+        console.log("Compare this",roomlist)
         console.log('no err 6');
-
+        
 
 
         switch (messageType) {
@@ -179,6 +184,7 @@ wss.on("connection", socket => {
                 });
                 let messageToDispatch = messageFormat("RoomList",roomlst);
                 
+                isChanged = false;
                 socket.send(messageToDispatch);
                 break;
 
@@ -187,7 +193,7 @@ wss.on("connection", socket => {
                 console.log('no err 8');
                 // Interaction == roomlist, user
 
-                let roomid = generateUniqueRoomId();
+                let roomid = generateUniqueRoomId(roomlist);
                 let code = makeid();
                 
                 roomlist.push(new room(roomid, messageReceived.payload.name,
@@ -219,7 +225,7 @@ wss.on("connection", socket => {
                             && room.id === messageReceived.payload.id;
                     });
                 if(roomselected.length == 0) {
-                    let roomid = generateUniqueRoomId();
+                    let roomid = generateUniqueRoomId(roomlist);
                     roomlist.push(new room(roomid, messageReceived.payload.name,
                         messageReceived.payload.creator, messageReceived.payload.code));                            // new room
                     roomlist[roomlist.length - 1]
@@ -228,13 +234,14 @@ wss.on("connection", socket => {
                             messageReceived.sender.pictureurl == undefined ? messageReceived.sender.pictureurl : "",
                             socket
                         ));                         
+                } else {
+                    roomselected[0] && roomselected[0].user.push(new user(
+                            messageReceived.sender.name,
+                            messageReceived.sender.pictureurl == undefined ? 
+                                "" : messageReceived.sender.pictureurl,
+                            socket
+                        ));                                                             // join room
                 }
-                roomselected[0] && roomselected[0].user.push(new user(
-                        messageReceived.sender.name,
-                        messageReceived.sender.pictureurl == undefined ? 
-                            "" : messageReceived.sender.pictureurl,
-                        socket
-                    ));                                                             // join room
                 let msgeToDispatch = messageFormat("EnterRoom",["success",messageReceived.payload.id]);       // make message
                 
                 socket.send(msgeToDispatch);
@@ -257,6 +264,8 @@ wss.on("connection", socket => {
                 roomselectedhere[0].user = roomselectedhere[0].user.filter((user) => {
                     return user.name != messageReceived.sender.name
                 });
+
+                connectionlist.delete(messageReceived.sender.name);
                 
                 let mseToDispatch = messageFormat("ExitRoom","Success");       // make message
                 socket.send(mseToDispatch);
@@ -266,16 +275,19 @@ wss.on("connection", socket => {
             case "GetMessage" :
                 console.log('no err 11');
                 // Interaction == roomlist, user, data
-
+                
                 let roomTemp = roomlist.filter((room) => {
                     return room.user.reduce((acc, curr) => {
                         return acc || curr.name == messageReceived.sender.name;
                     },false);
                 });
                 let mgeToDispatch = messageFormat("NewMessage",
-                    roomTemp[0] == undefined ? new Array() : roomTemp[0].message);       // make message
+                    roomTemp[0] == undefined ? [] : roomTemp[0].message);       // make message
                 
+                console.log("MESSAGE",roomTemp,roomlist);
                 socket.send(mgeToDispatch);
+                console.log("MESSAGE-----",mgeToDispatch);
+                isChanged = false;
                 break;
 
 
@@ -289,7 +301,7 @@ wss.on("connection", socket => {
                     },0);
                 });
                 
-                if(roomTmp[0]) break;
+                if(!roomTmp[0]) break;
 
                 roomTmp[0].message.push(new message(
                     messageReceived.sender.name, messageReceived.payload
@@ -314,19 +326,20 @@ wss.on("connection", socket => {
         if(isChanged) {
             console.log('no err 17');
             // clear database
-            prlist = [];
+            let prlist = [];
             prlist[0] = client.query("DELETE FROM room WHERE true");
             prlist[1] = client.query("DELETE FROM users WHERE true");
             prlist[2] = client.query("DELETE FROM message WHERE true");
-            await Promise.all(prlist).catch((e)=>{console.log});
+            await Promise.all(prlist).catch((e)=>{console.log(e)});
             console.log('no err 14');
             
             // push room
             var counteruser = 0;
             var countermessage = 0;
-            prlistn = [];
+            let prlistn = [];
+            console.log("ROOMLIST",roomlist);
             roomlist.forEach((room) => {
-                let querystring = "INSERT INTO room VALUES (" + "'" + room.name + "','" + room.creator + "','" + room.code + "');";
+                let querystring = "INSERT INTO room (id,name,creator,code) VALUES (" + room.id.toString() + ",'" + room.name + "','" + room.creator + "','" + room.code + "');";
                 console.log(querystring);
                 prlistn.push(client.query(querystring));
 
@@ -334,22 +347,23 @@ wss.on("connection", socket => {
                 // push user
                 room.user.forEach(user => {
                     counteruser += 1;
-                    querystring = "INSERT INTO users VALUES (" + "'" + user.name + "','" + user.pictureurl + "'," + room.id.toString() + ");";
+                    querystring = "INSERT INTO users (name,pictureurl,roomid) VALUES (" + "'" + user.name + "','" + user.pictureurl + "'," + room.id.toString() + ");";
                     console.log(querystring,counteruser);
                     prlistn.push(client.query(querystring));
                 });
-
                 console.log('no err 16');
                 // push message
                 room.message.forEach(message => {
                     countermessage += 1;
-                    querystring = "INSERT INTO message VALUES (" + "'" + message.sender + "','" + message.text + "','" + message.time + "'," + room.id.toString() + ");";
+                    querystring = "INSERT INTO message (sender,text,time,roomid) VALUES (" + "'" + message.sender + "','" + message.text + "','" + message.time + "'," + room.id.toString() + ");";
                     console.log(querystring,countermessage);
                     prlistn.push(client.query(querystring));
                 });
+
+                console.log("no err rpt")
             });
             console.log('no err 18');
-            await Promise.all(prlistn).catch(()=>console.log);
+            await Promise.all(prlistn).catch((e)=>console.log(e));
         }
 
         console.log("-");
@@ -406,7 +420,7 @@ function makeid() {
     }
    return result;
 }
-function generateUniqueRoomId() {
+function generateUniqueRoomId(roomlist) {
     let roomid = Math.floor(Math.random() * 100);
     while(
         roomlist != 0
