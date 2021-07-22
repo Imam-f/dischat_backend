@@ -94,6 +94,7 @@ wss.on("connection", socket => {
         // todo pull user
         // todo update connection per user
         console.log("up");
+        let isChanged = true;
         roomlist = [];
         let roomQuery = await client.query("SELECT * FROM room");
         let userQuery = await client.query("SELECT * FROM user");
@@ -112,7 +113,8 @@ wss.on("connection", socket => {
                 if(user.roomid == row.id) {
                     
                     // corelate user and connection
-
+                    let connectiondata = (connectionlist.has(user.name)) ? 
+                            connectionlist.get(user.name) : null;
 
                     roomlist[roomlist.length - 1].user.push(new user(
                         user.name,
@@ -140,7 +142,7 @@ wss.on("connection", socket => {
 
         switch (messageType) {
 
-
+            
             case "RoomList" :
                 // Interaction == roomlist
 
@@ -260,7 +262,7 @@ wss.on("connection", socket => {
                 let msgToDispatch = messageFormat("NewMessage", 
                     roomTmp[0] == undefined ? "" : roomTmp[0].message);       // make message
                 roomTmp[0].user.forEach((user) => {
-                    user.connection.send(msgToDispatch);
+                    user.connection && user.connection.send(msgToDispatch);
                 });
                 break;
 
@@ -270,13 +272,58 @@ wss.on("connection", socket => {
 
 
             default:
+                isChanged = false;
                 console.log("Unhandled Data")
                 break;
         }
 
+        // update database
+        if(isChanged) {
+            // clear database
+            prlist[0] = client.query("DELETE FROM room WHERE true");
+            prlist[1] = client.query("DELETE FROM user WHERE true");
+            prlist[2] = client.query("DELETE FROM message WHERE true");
+            await Promise.all(prlist);
+            
+            // push room
+            var counteruser = 0;
+            var countermessage = 0;
+            prlistn = [];
+            roomlist.forEach((room) => {
+                let querystring = "INSERT INTO room VALUES (" +
+                + room.id.toString()
+                + ",'" + room.name
+                + "','" + room.creator
+                + "','" + room.code + "');";
+                prlistn.push(client.query(querystring));
+
+                // push user
+                room.user.forEach(user => {
+                    querystring = "INSERT INTO user VALUES (" +
+                    + counteruser.toString()
+                    + ",'" + user.name
+                    + "','" + user.pictureurl
+                    + "'," + room.id.toString() + ");";
+                    counteruser += 1;
+                    prlistn.push(client.query(querystring));
+                });
+
+                // push message
+                room.message.forEach(message => {
+                    querystring = "INSERT INTO message VALUES (" +
+                    + countermessage.toString()
+                    + ",'" + message.sender
+                    + "','" + message.text 
+                    + "','" + message.time 
+                    + "'," + room.id.toString() + ");";
+                    countermessage += 1;
+                    prlistn.push(client.query(querystring));
+                });
+            });
+            await Promise.all(prlistn);
+        }
 
         roomcheckmutex = false;
-        // update database
     });
 });
 
