@@ -20,6 +20,9 @@ console.log("Listening on", process.env.PORT);
 
 var roomlist = [];
 var roomcheckmutex = false;
+var connectionlist = new Map();
+
+// ----------------------------------------------
 
 // client.query("SELECT * FROM room",(err,res) => {
 //     console.log("Inside Query",res);
@@ -56,18 +59,21 @@ var roomcheckmutex = false;
 
 // Room Pooling
 // use interval to each room
-setInterval(() => {
-    console.log("Room");
 
-    while(roomcheckmutex) {}
-    roomcheckmutex = true;
-    roomlist = roomlist.filter((room) => {
-        return (room.user.length > 0) || (room.message.length > 0);
-    });
+// Disabled for database experiment
+
+// setInterval(() => {
+//     console.log("Room");
+
+//     while(roomcheckmutex) {}
+//     roomcheckmutex = true;
+//     roomlist = roomlist.filter((room) => {
+//         return (room.user.length > 0) || (room.message.length > 0);
+//     });
     
-    roomcheckmutex = false;
-    // console.log(roomlist);
-}, 60000);
+//     roomcheckmutex = false;
+//     // console.log(roomlist);
+// }, 60000);
 
 // ===============================================
 
@@ -75,14 +81,24 @@ wss.on("connection", socket => {
 
     socket.on("message", async messageFromUser => {
 
+        // Parse message
+        while(roomcheckmutex) {}
+        roomcheckmutex = true;
+
+        let messageReceived = JSON.parse(messageFromUser);
+        let messageType = messageReceived.type;
+
+
         // pull database
         // todo pull message
         // todo pull user
         // todo update connection per user
         console.log("up");
         roomlist = [];
-        let res = await client.query("SELECT * FROM room");
-        res.rows.map(row => {
+        let roomQuery = await client.query("SELECT * FROM room");
+        let userQuery = await client.query("SELECT * FROM user");
+        let messageQuery = await client.query("SELECT * FROM message");
+        roomQuery.rows.map(row => {
             console.log(row);
             roomlist.push(new room(
                 row.id,
@@ -90,17 +106,44 @@ wss.on("connection", socket => {
                 row.creator,
                 row.code
             ));
+
+            // push user
+            userQuery.rows.forEach((user) => {
+                if(user.roomid == row.id) {
+                    
+                    // corelate user and connection
+
+
+                    roomlist[roomlist.length - 1].user.push(new user(
+                        user.name,
+                        user.pictureurl,
+                        connectiondata,
+                    ));
+                }
+            });
+            roomlist[roomlist.length - 1].message;
+            
+            // push message
+            messageQuery.rows.forEach((message) => {
+                if(message.roomid == row.id) {
+                    roomlist[roomlist.length - 1].message.push(new message(
+                        message.sender,
+                        message.text,
+                        message.time
+                    ));
+                };
+            });
         });
         console.log("down",roomlist);
 
-        while(roomcheckmutex) {}
-        roomcheckmutex = true;
-        let messageReceived = JSON.parse(messageFromUser);
-        let messageType = messageReceived.type;
+
 
         switch (messageType) {
 
+
             case "RoomList" :
+                // Interaction == roomlist
+
                 let roomlst = roomlist.map((elm) => {
                     return {
                         id : elm.id,
@@ -109,13 +152,15 @@ wss.on("connection", socket => {
                         code : elm.code
                     }
                 });
-                // roomlst[0].creator = (new Date()).toString();
                 let messageToDispatch = messageFormat("RoomList",roomlst);
                 
                 socket.send(messageToDispatch);
                 break;
 
+
             case "RoomMake" :
+                // Interaction == roomlist, user
+
                 let roomid = generateUniqueRoomId();
                 let code = makeid();
                 
@@ -138,7 +183,10 @@ wss.on("connection", socket => {
                 socket.send(mssageToDispatch);
                 break;
 
+                
             case "RoomEnter" :
+                // Interaction == roomlist, user
+
                 let roomselected = roomlist.filter((room) => {
                         return room.code === messageReceived.payload.code 
                             && room.id === messageReceived.payload.id;
@@ -165,9 +213,10 @@ wss.on("connection", socket => {
                 socket.send(msgeToDispatch);
                 break;
 
+
             case "RoomExit" :
-                // todo here
-                // assign if not
+                // Interaction == roomlist, user
+
                 let roomselectedhere = roomlist.filter((room) => {
                         return room.code == messageReceived.payload.code 
                         && room.id == messageReceived.payload.id;
@@ -176,11 +225,14 @@ wss.on("connection", socket => {
                 if(roomselectedhere.length == 0) break;
                 roomselectedhere[0].user = roomselectedhere[0].user.filter((user) => {
                     return user.name != messageReceived.sender.name
-                })
+                });
                 
                 break;
 
+
             case "GetMessage" :
+                // Interaction == roomlist, user, data
+
                 let roomTemp = roomlist.filter((room) => {
                     return room.user.reduce((acc, curr) => {
                         return acc || curr.name == messageReceived.sender.name;
@@ -192,7 +244,10 @@ wss.on("connection", socket => {
                 socket.send(mgeToDispatch);
                 break;
 
+
             case "SendMessage" :
+                // Interaction == roomlist, user, data
+
                 let roomTmp = roomlist.filter((room) => {
                     return room.user.reduce((acc, curr) => {
                         return acc || (curr.name == messageReceived.sender.name)
@@ -209,12 +264,17 @@ wss.on("connection", socket => {
                 });
                 break;
 
+
             case "pong" :
                 // pong logic
 
+
             default:
+                console.log("Unhandled Data")
                 break;
         }
+
+
         roomcheckmutex = false;
         // update database
     });
